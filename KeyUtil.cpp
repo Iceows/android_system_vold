@@ -53,14 +53,19 @@ static bool randomKey(size_t size, KeyBuffer* key) {
 }
 
 bool generateStorageKey(const KeyGeneration& gen, KeyBuffer* key) {
-    if (!gen.allow_gen) return false;
+    if (!gen.allow_gen) {
+        LOG(ERROR) << "Generating storage key not allowed";
+        return false;
+        }
     if (gen.use_hw_wrapped_key) {
         if (gen.keysize != FSCRYPT_MAX_KEY_SIZE) {
             LOG(ERROR) << "Cannot generate a wrapped key " << gen.keysize << " bytes long";
             return false;
         }
+        LOG(DEBUG) << "Generating wrapped storage key";
         return generateWrappedStorageKey(key);
     } else {
+        LOG(DEBUG) << "Generating standard storage key";
         return randomKey(gen.keysize, key);
     }
 }
@@ -150,10 +155,21 @@ static std::string buildLegacyKeyName(const std::string& prefix, const std::stri
 // Get the ID of the keyring we store all fscrypt keys in when the kernel is too
 // old to support FS_IOC_ADD_ENCRYPTION_KEY and FS_IOC_REMOVE_ENCRYPTION_KEY.
 static bool fscryptKeyring(key_serial_t* device_keyring) {
+
     *device_keyring = keyctl_search(KEY_SPEC_SESSION_KEYRING, "keyring", "fscrypt", 0);
     if (*device_keyring == -1) {
-        PLOG(ERROR) << "Unable to find device keyring";
-        return false;
+        LOG(INFO) << "keyring fscrypt not found in the kernel, try now e4crypt";
+        *device_keyring = keyctl_search(KEY_SPEC_SESSION_KEYRING, "keyring", "e4crypt", 0);
+	if (*device_keyring == -1) {
+		PLOG(ERROR) << "Unable to find device keyring";
+		return false;
+	}
+	else {
+	        LOG(INFO) << "keyring e4crypt found in the kernel";
+	}
+    }
+    else {
+	LOG(INFO) << "keyring fscrypt found in the kernel";
     }
     return true;
 }
