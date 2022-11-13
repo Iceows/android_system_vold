@@ -255,7 +255,7 @@ static int process_config(VolumeManager* vm, bool* has_adoptable, bool* has_quot
             int partnum = entry.partnum;
             int flags = 0;
 
-            if (entry.is_encryptable()) {
+            if (entry.is_encryptable() || true) {
                 flags |= android::vold::Disk::Flags::kAdoptable;
                 *has_adoptable = true;
             }
