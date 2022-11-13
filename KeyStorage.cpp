@@ -81,6 +81,24 @@ static const char* kFn_secdiscardable = "secdiscardable";
 static const char* kFn_stretching = "stretching";
 static const char* kFn_version = "version";
 
+
+
+// Huawei patch by Iceows - Enable software authentification key
+KeyAuthentication::KeyAuthentication(const std::string& t, const std::string& s) : token{t}, secret{s}  {
+
+      if (s.empty()) {
+        char kacrypt_prop[PROPERTY_VALUE_MAX];
+
+        property_get("ro.crypto.keyauth.enable", kacrypt_prop, "");
+        if (strlen(kacrypt_prop) > 0 && std::stoi(kacrypt_prop)) {
+          // Set software hard code key
+          LOG(INFO) << "Enable key authentification - ro.crypto.keyauth.enable=1";
+          secret = "N0BZGwYKev0auvSYIocce4MB876RES8C";
+        }
+      }
+}
+
+
 static bool checkSize(const std::string& kind, size_t actual, size_t expected) {
     if (actual != expected) {
         LOG(ERROR) << "Wrong number of bytes in " << kind << ", expected " << expected << " got "
